@@ -1,7 +1,7 @@
 
 name: xxx
 
-job:
+on:
   workflow_dispatch:
     inputs:
       release_branch:
