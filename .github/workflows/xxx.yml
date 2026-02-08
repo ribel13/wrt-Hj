@@ -1,5 +1,16 @@
+#=====================================================================================
+#
+# Description:   Build OpenWrt with Image Builder
+# This file is a part of the make OpenWrt for Amlogic s9xxx tv box
+# https://github.com/ophub/amlogic-s9xxx-openwrt
+#
+# Documentation: https://openwrt.org/docs/guide-user/additional-software/imagebuilder
+# Download from: https://downloads.openwrt.org/releases
+#                https://downloads.immortalwrt.org/releases
+#
+#=====================================================================================
 
-name: xxx
+name: Xxx Amlogic Firmware
 
 on:
   workflow_dispatch:
@@ -7,10 +18,9 @@ on:
       release_branch:
         description: "Select the release branch:"
         required: true
-        default: "openwrt:25.12"
+        default: "openwrt:23.05.3"
         type: choice
         options:
-          - openwrt:25.12
           - openwrt:21.02.7
           - openwrt:23.05.2
           - openwrt:23.05.3
@@ -30,7 +40,7 @@ on:
       openwrt_kernel:
         description: "Select kernel version"
         required: false
-        default: "6.6.y"
+        default: "5.15.1_6.1.1"
         type: choice
         options:
           - 5.4.1_5.10.1
@@ -39,7 +49,6 @@ on:
           - 5.10.1
           - 5.15.1
           - 6.1.1
-          - 6.6.u
       auto_kernel:
         description: "Auto use the latest kernel"
         required: false
@@ -48,11 +57,10 @@ on:
       kernel_repo:
         description: "Set the kernel repository"
         required: false
-        default: "ribel13/kernel"
+        default: "ophub/kernel"
         type: choice
         options:
           - ophub/kernel
-          - ribel13/kernel
       kernel_usage:
         description: "Set the tags of the stable kernel."
         required: false
@@ -66,7 +74,7 @@ on:
       tunnel:
         description: "Select VPN Client app (!neko and passwall only support for newer branch with fw4 firewall!):"
         required: true
-        default: "no-tunnel"
+        default: "openclash"
         type: choice
         options:
           - all
@@ -232,42 +240,13 @@ jobs:
         run: |
           cd $WORKING_DIR
           bash scripts/external-package-urls.sh
-          if [[ "$BRANCH" == "21.02.7" ]]; then
-             grep -E "^all-all|^old-21.02|^amlogic-$tags|^amlogic" external-package-urls.txt | awk '{print $2}' > output_url.txt
+          if [[ "$BRANCH" == "25.12" ]]; then
+             grep -E "^all-all|^25.12|^amlogic-$tags|^amlogic" external-package-urls.txt | awk '{print $2}' > output_url.txt
           else
              grep -E "^all-all|^all|^amlogic" external-package-urls.txt | grep -vE "^amlogic-21.02" | awk '{print $2}' > output_url.txt
           fi
           wget --no-check-certificate -i output_url.txt -nv -P packages
           echo "status=success" >> $GITHUB_OUTPUT
-
-      - name: Build Rootfs ${{ inputs.release_branch }}
-        id: compile
-        if: steps.scripts.outputs.status == 'success' && !cancelled()
-        run: |
-          cd $WORKING_DIR
-          mkdir -p compiled_images
-          if [[ "$TUNNEL" == "all" && "$BRANCH" != "21.02.7" ]]; then
-            for t in openclash-passwall neko-passwall neko-openclash openclash-passwall-neko openclash passwall neko no-tunnel; do
-              echo "Compiling with VPN Client: $t"
-              if [ "$CLEAN" == "true" ]; echo "Start 'make clean' before building images."; then make clean; fi
-              time bash make-build.sh $PROFILE $t
-              for file in bin/targets/"$TARGET_SYSTEM"/*rootfs.tar.gz; do mv "$file" compiled_images; done
-            done
-          elif [[ "$TUNNEL" == "all" && "$BRANCH" = "21.02.7" ]]; then
-            for t in openclash no-tunnel; do
-              echo "Compiling with VPN Client: $t"
-              if [ "$CLEAN" == "true" ]; echo "Start 'make clean' before building images."; then make clean; fi
-              time bash make-build.sh $PROFILE $t
-              for file in bin/targets/"$TARGET_SYSTEM"/*rootfs.tar.gz; do mv "$file" compiled_images; done
-            done
-          elif [[ ("$TUNNEL" == "neko" || "$TUNNEL" == "passwall" || "$TUNNEL" == "openclash-passwall" || "$TUNNEL" == "neko-passwall" || "$TUNNEL" == "neko-openclash" || "$TUNNEL" == "openclash-passwall-neko") && "$BRANCH" != "21.02.7" || "$TUNNEL" == "openclash" || "$TUNNEL" == "no-tunnel" ]]; then
-            echo "Compiling with VPN Client: $TUNNEL"
-            bash make-build.sh $PROFILE $TUNNEL
-            for file in bin/targets/"$TARGET_SYSTEM"/*rootfs.tar.gz; do mv "$file" compiled_images; done
-          fi
-          ls -l compiled_images
-          echo "status=success" >> $GITHUB_OUTPUT
-          echo -e "Server space usage after compilation: \n$(df -hT ${PWD}) \n"
 
       - name: Clear server space
         if: ${{ steps.imagebuilder.outputs.status }} == 'success' && !cancelled()
@@ -322,7 +301,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         if: ${{ steps.prep_upload.outputs.status }} == 'success' && !cancelled()
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.RELEASES_TOKEN }}
           file_glob: true
           file: ${{ env.PACKAGED_OUTPUTPATH }}/*
           asset_name: ${{ github.event.repository.name }}-${{ github.sha }}
