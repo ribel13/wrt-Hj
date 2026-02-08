@@ -62,7 +62,9 @@ PACKAGES+=" internet-detector luci-app-internet-detector internet-detector-mod-m
 # PACKAGES+=" luci-app-base64"
 
 # Argon Theme
-PACKAGES+=" luci-theme-argon luci-app-argon-config luCi-theme-material"
+PACKAGES+=" luci-theme-argon luCi-theme-material"
+# PACKAGES+=" luci-theme-argon luci-app-argon-config luCi-theme-material"
+
 
 # Alpha Theme
 # PACKAGES+=" luci-theme-alpha luci-app-alpha-config"
