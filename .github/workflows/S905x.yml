@@ -18,9 +18,10 @@ on:
       release_branch:
         description: "Select the release branch:"
         required: true
-        default: "openwrt:23.05.3"
+        default: "openwrt:25.12"
         type: choice
         options:
+          - openwrt:25.12
           - openwrt:21.02.7
           - openwrt:23.05.2
           - openwrt:23.05.3
@@ -40,7 +41,7 @@ on:
       openwrt_kernel:
         description: "Select kernel version"
         required: false
-        default: "5.15.1_6.1.1"
+        default: "6.6.y"
         type: choice
         options:
           - 5.4.1_5.10.1
@@ -49,6 +50,7 @@ on:
           - 5.10.1
           - 5.15.1
           - 6.1.1
+          - 6.6.u
       auto_kernel:
         description: "Auto use the latest kernel"
         required: false
@@ -57,10 +59,11 @@ on:
       kernel_repo:
         description: "Set the kernel repository"
         required: false
-        default: "ophub/kernel"
+        default: "ribel13/kernel"
         type: choice
         options:
           - ophub/kernel
+          - ribel13/kernel
       kernel_usage:
         description: "Set the tags of the stable kernel."
         required: false
@@ -74,7 +77,7 @@ on:
       tunnel:
         description: "Select VPN Client app (!neko and passwall only support for newer branch with fw4 firewall!):"
         required: true
-        default: "openclash"
+        default: "no-tunnel"
         type: choice
         options:
           - all
@@ -314,7 +317,7 @@ jobs:
 
       - name: Packaging ${{ inputs.release_branch }}
         if: ${{ steps.imagebuilder.outputs.status }} == 'success' && !cancelled()
-        uses: ophub/amlogic-s9xxx-openwrt@main
+        uses: ribel13/amlogic-s9xxx-openwrt@main
         with:
           openwrt_path: $WORKING_DIR/compiled_images/*rootfs.tar.gz
           openwrt_board: ${{ env.openwrt_board }}
@@ -322,7 +325,7 @@ jobs:
           auto_kernel: ${{ inputs.auto_kernel }}
           kernel_repo: ${{ inputs.kernel_repo }}
           kernel_usage: ${{ inputs.kernel_usage }}
-          builder_name: friWrt
+          builder_name: FRDMx
 
       - name: Prepare file before upload
         if: ${{ env.PACKAGED_STATUS }} == 'success' && !cancelled()
